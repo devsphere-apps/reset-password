@@ -272,22 +272,96 @@
             }
         }
 
-        function openApp() {
-            // Try to open the app
+         function openApp() {
+            console.log('🔄 Attempting to open app...');
+            
+            // Try to open the app via deep link
             window.location.href = 'funnypranksounds://';
             
-            // Fallback: show app store links after 2 seconds
+            // Show a user-friendly message instead of broken app store links
             setTimeout(() => {
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 const isAndroid = /Android/.test(navigator.userAgent);
                 
+                // Create a helpful message div
+                const messageDiv = document.createElement('div');
+                messageDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    right: 20px;
+                    background: #f0f9ff;
+                    border: 1px solid #0ea5e9;
+                    border-radius: 8px;
+                    padding: 15px;
+                    text-align: center;
+                    z-index: 1000;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                `;
+                
+                let message = '';
                 if (isIOS) {
-                    window.location.href = 'https://apps.apple.com/app/your-app-id'; // Replace with your App Store URL
+                    message = `
+                        <strong>🎉 Password Updated Successfully!</strong><br><br>
+                        <p>If the app didn't open automatically:</p>
+                        <p>• Go back to the <strong>Funny Prank Sounds</strong> app manually</p>
+                        <p>• Sign in with your new password</p>
+                        <br>
+                        <button onclick="this.parentElement.remove()" style="
+                            background: #0ea5e9; 
+                            color: white; 
+                            border: none; 
+                            padding: 8px 16px; 
+                            border-radius: 6px; 
+                            cursor: pointer;
+                        ">Got it!</button>
+                    `;
                 } else if (isAndroid) {
-                    window.location.href = 'https://play.google.com/store/apps/details?id=your.package.name'; // Replace with your Play Store URL
+                    message = `
+                        <strong>🎉 Password Updated Successfully!</strong><br><br>
+                        <p>If the app didn't open automatically:</p>
+                        <p>• Go back to the <strong>Funny Prank Sounds</strong> app manually</p>
+                        <p>• Sign in with your new password</p>
+                        <br>
+                        <button onclick="this.parentElement.remove()" style="
+                            background: #0ea5e9; 
+                            color: white; 
+                            border: none; 
+                            padding: 8px 16px; 
+                            border-radius: 6px; 
+                            cursor: pointer;
+                        ">Got it!</button>
+                    `;
+                } else {
+                    message = `
+                        <strong>🎉 Password Updated Successfully!</strong><br><br>
+                        <p>Please return to the <strong>Funny Prank Sounds</strong> app and sign in with your new password.</p>
+                        <br>
+                        <button onclick="this.parentElement.remove()" style="
+                            background: #0ea5e9; 
+                            color: white; 
+                            border: none; 
+                            padding: 8px 16px; 
+                            border-radius: 6px; 
+                            cursor: pointer;
+                        ">Got it!</button>
+                    `;
                 }
+                
+                messageDiv.innerHTML = message;
+                document.body.appendChild(messageDiv);
+                
+                // Auto-remove after 10 seconds
+                setTimeout(() => {
+                    if (messageDiv.parentElement) {
+                        messageDiv.remove();
+                    }
+                }, 10000);
+                
             }, 2000);
         }
+    
+    
     </script>
 </body>
 </html> 
