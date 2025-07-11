@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password - Funny Prank Sounds</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        button:hover {
+            background-color: #5856eb;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #10b981;
+            text-align: center;
+            padding: 15px;
+            background-color: #f0fdf4;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .error {
+            color: #ef4444;
+            text-align: center;
+            padding: 15px;
+            background-color: #fef2f2;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .back-to-app {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back-to-app a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .requirements {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎉 Funny Prank Sounds</div>
+        
+        <div id="loading" style="text-align: center; display: none;">
+            <p>Processing reset link...</p>
+        </div>
+
+        <div id="reset-form" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 20px;">Create New Password</h2>
+            
+            <div class="requirements">
+                <strong>Password Requirements:</strong><br>
+                • At least 6 characters<br>
+                • One uppercase letter<br>
+                • One lowercase letter<br>
+                • One number<br>
+                • One special character
+            </div>
+
+            <input type="password" id="new-password" placeholder="New Password" required>
+            <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+            
+            <button id="update-btn" onclick="updatePassword()">Update Password</button>
+            
+            <div id="message"></div>
+        </div>
+
+        <div id="invalid-link" style="display: none; text-align: center;">
+            <div class="error">
+                <strong>Invalid or Expired Link</strong><br>
+                This reset link is no longer valid. Please request a new password reset from the app.
+            </div>
+        </div>
+
+        <div class="back-to-app">
+            <a href="funnypranksounds://" onclick="openApp()">← Back to App</a>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your actual Supabase credentials
+        const SUPABASE_URL = 'https://xcrtdpfscboxfbdilwae.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjcnRkcGZzY2JveGZiZGlsd2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNDQ4NzAsImV4cCI6MjA2NzYyMDg3MH0.ybgyZzWOxDy3-fsN9REXzMdGGWY7gV0UpGKAhIx2640';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let session = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔧 Initializing password reset page...');
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                // Get session from URL fragments (Supabase format)
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+                const refreshToken = hashParams.get('refresh_token');
+                const type = hashParams.get('type');
+
+                console.log('🔐 URL params:', { 
+                    hasAccessToken: !!accessToken, 
+                    hasRefreshToken: !!refreshToken, 
+                    type 
+                });
+
+                if (accessToken && refreshToken && type === 'recovery') {
+                    // Set session from tokens
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                    });
+
+                    if (error) {
+                        console.error('❌ Error setting session:', error);
+                        showInvalidLink();
+                        return;
+                    }
+
+                    console.log('✅ Session set successfully');
+                    session = data.session;
+                    showResetForm();
+                } else {
+                    console.log('❌ Missing required tokens');
+                    showInvalidLink();
+                }
+            } catch (error) {
+                console.error('💥 Error processing reset link:', error);
+                showInvalidLink();
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function showResetForm() {
+            document.getElementById('reset-form').style.display = 'block';
+            document.getElementById('new-password').focus();
+        }
+
+        function showInvalidLink() {
+            document.getElementById('invalid-link').style.display = 'block';
+        }
+
+        function showMessage(message, isError = false) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        function validatePassword(password) {
+            const errors = [];
+            
+            if (password.length < 6) errors.push('At least 6 characters');
+            if (!/[A-Z]/.test(password)) errors.push('One uppercase letter');
+            if (!/[a-z]/.test(password)) errors.push('One lowercase letter');
+            if (!/[0-9]/.test(password)) errors.push('One number');
+            if (!/[^A-Za-z0-9]/.test(password)) errors.push('One special character');
+            
+            return errors;
+        }
+
+        async function updatePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const updateBtn = document.getElementById('update-btn');
+
+            // Validation
+            if (!newPassword || !confirmPassword) {
+                showMessage('Please fill in both password fields', true);
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage('Passwords do not match', true);
+                return;
+            }
+
+            const passwordErrors = validatePassword(newPassword);
+            if (passwordErrors.length > 0) {
+                showMessage(`Password must contain: ${passwordErrors.join(', ')}`, true);
+                return;
+            }
+
+            if (!session) {
+                showMessage('Session expired. Please request a new reset link.', true);
+                return;
+            }
+
+            // Update password
+            updateBtn.disabled = true;
+            updateBtn.textContent = 'Updating...';
+
+            try {
+                console.log('🔄 Updating password...');
+                
+                const { data, error } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) {
+                    console.error('❌ Password update failed:', error);
+                    showMessage(`Error: ${error.message}`, true);
+                } else {
+                    console.log('✅ Password updated successfully');
+                    showMessage('✅ Password updated successfully! You can now sign in with your new password.');
+                    
+                    // Clear form
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                    
+                    // Auto-redirect to app after 3 seconds
+                    setTimeout(() => {
+                        openApp();
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('💥 Unexpected error:', error);
+                showMessage('An unexpected error occurred. Please try again.', true);
+            } finally {
+                updateBtn.disabled = false;
+                updateBtn.textContent = 'Update Password';
+            }
+        }
+
+        function openApp() {
+            // Try to open the app
+            window.location.href = 'funnypranksounds://';
+            
+            // Fallback: show app store links after 2 seconds
+            setTimeout(() => {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isAndroid = /Android/.test(navigator.userAgent);
+                
+                if (isIOS) {
+                    window.location.href = 'https://apps.apple.com/app/your-app-id'; // Replace with your App Store URL
+                } else if (isAndroid) {
+                    window.location.href = 'https://play.google.com/store/apps/details?id=your.package.name'; // Replace with your Play Store URL
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
